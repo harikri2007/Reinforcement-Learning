@@ -9,7 +9,7 @@ from collections import namedtuple, deque
 import torch.optim as optim
 ```
 
-Next, we will start the environment!  **_Before running the code cell below_**, change the `file_name` parameter to match the location of the Unity environment that you downloaded.
+Next, we will start the environment! **_Before running the code cell below_**, change the `file_name` parameter to match the location of the Unity environment that you downloaded.
 
 - **Mac**: `"path/to/Banana.app"`
 - **Windows** (x86): `"path/to/Banana_Windows_x86/Banana.exe"`
@@ -19,11 +19,11 @@ Next, we will start the environment!  **_Before running the code cell below_**, 
 - **Linux** (x86, headless): `"path/to/Banana_Linux_NoVis/Banana.x86"`
 - **Linux** (x86_64, headless): `"path/to/Banana_Linux_NoVis/Banana.x86_64"`
 
-For instance, if you are using a Mac, then you downloaded `Banana.app`.  If this file is in the same folder as the notebook, then the line below should appear as follows:
+For instance, if you are using a Mac, then you downloaded `Banana.app`. If this file is in the same folder as the notebook, then the line below should appear as follows:
+
 ```
 env = UnityEnvironment(file_name="Banana.app")
 ```
-
 
 ```python
 env = UnityEnvironment(file_name="./Banana_Linux_NoVis/Banana.x86_64") # make sure to adject path based on the location where you copied the unity env
@@ -48,7 +48,7 @@ env = UnityEnvironment(file_name="./Banana_Linux_NoVis/Banana.x86_64") # make su
             Number of External Brains : 1
             Lesson number : 0
             Reset Parameters :
-    		
+
     Unity brain name: BananaBrain
             Number of Visual Observations (per agent): 0
             Vector Observation space type: continuous
@@ -56,11 +56,9 @@ env = UnityEnvironment(file_name="./Banana_Linux_NoVis/Banana.x86_64") # make su
             Number of stacked Vector Observation: 1
             Vector Action space type: discrete
             Vector Action space size (per agent): 4
-            Vector Action descriptions: , , , 
-
+            Vector Action descriptions: , , ,
 
 Environments contain **_brains_** which are responsible for deciding the actions of their associated agents. Here we check for the first brain available, and set it as the default brain we will be controlling from Python.
-
 
 ```python
 # get the default brain
@@ -70,16 +68,16 @@ brain = env.brains[brain_name]
 
 ### 2. State and Action Spaces and score required to solve the problem
 
-The simulation contains a single agent that navigates a large environment.  At each time step, it has four actions at its disposal:
-- `0` - walk forward 
+The simulation contains a single agent that navigates a large environment. At each time step, it has four actions at its disposal:
+
+- `0` - walk forward
 - `1` - walk backward
 - `2` - turn left
 - `3` - turn right
 
-The state space has `37` dimensions and contains the agent's velocity, along with ray-based perception of objects around agent's forward direction.  A reward of `+1` is provided for collecting a yellow banana, and a reward of `-1` is provided for collecting a blue banana. 
+The state space has `37` dimensions and contains the agent's velocity, along with ray-based perception of objects around agent's forward direction. A reward of `+1` is provided for collecting a yellow banana, and a reward of `-1` is provided for collecting a blue banana.
 
 The problem considered solved when we reach an average score of 13 in 100 consecutive episodes.
-
 
 ```python
 # reset the environment
@@ -92,7 +90,7 @@ print('Number of agents:', len(env_info.agents))
 action_size = brain.vector_action_space_size
 print('Number of actions:', action_size)
 
-# examine the state space 
+# examine the state space
 state = env_info.vector_observations[0]
 print('States look like:', state)
 state_size = len(state)
@@ -110,36 +108,31 @@ print('States have length:', state_size)
      0.        ]
     States have length: 37
 
-
 ### 3. Hyper paremeters
 
 In the next code cell, explain the hyper parameters used .
-
-
 
 ```python
 BUFFER_SIZE = int(1e5)  # replay buffer size
 BATCH_SIZE = 128         # minibatch size
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
-LR = 1e-3               # learning rate 
+LR = 1e-3               # learning rate
 UPDATE_EVERY = 4        # how often to update the network
 ```
-
 
 ```python
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
 ```
 
-
 ```python
 
 ```
 
 ### 4. Network architectue
-Here, we use a dueling Q network architecture, which separates the estimation of state value and advantage for each action. This helps the agent learn which states are valuable, independent of the action taken. Since the state size is relatively small (37), we use only two fully connected hidden layers with moderate size to keep the model efficient and avoid overfitting.
 
+Here, we use a dueling Q network architecture, which separates the estimation of state value and advantage for each action. This helps the agent learn which states are valuable, independent of the action taken. Since the state size is relatively small (37), we use only two fully connected hidden layers with moderate size to keep the model efficient and avoid overfitting.
 
 ```python
 
@@ -177,8 +170,6 @@ class QNetwork(nn.Module):
 
     cuda:0
 
-
-
 ```python
 class ReplayBuffer:
     """Fixed-size buffer to store experience tuples."""
@@ -194,16 +185,16 @@ class ReplayBuffer:
             seed (int): random seed
         """
         self.action_size = action_size
-        self.memory = deque(maxlen=buffer_size)  
+        self.memory = deque(maxlen=buffer_size)
         self.batch_size = batch_size
         self.experience = namedtuple("Experience", field_names=["state", "action", "reward", "next_state", "done"])
         self.seed = random.seed(seed)
-    
+
     def add(self, state, action, reward, next_state, done):
         """Add a new experience to memory."""
         e = self.experience(state, action, reward, next_state, done)
         self.memory.append(e)
-    
+
     def sample(self):
         """Randomly sample a batch of experiences from memory."""
         experiences = random.sample(self.memory, k=self.batch_size)
@@ -213,14 +204,13 @@ class ReplayBuffer:
         rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float().to(device)
         next_states = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float().to(device)
         dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None]).astype(np.uint8)).float().to(device)
-  
+
         return (states, actions, rewards, next_states, dones)
 
     def __len__(self):
         """Return the current size of internal memory."""
         return len(self.memory)
 ```
-
 
 ```python
 
@@ -237,18 +227,19 @@ At each step, the agent stores its experience (state, action, reward, next state
 The agent selects actions using an epsilon-greedy policy: with probability epsilon, it chooses a random action (exploration); otherwise, it chooses the action with the highest predicted value from the local network (exploitation).
 
 **Learning Step:**  
-Every `UPDATE_EVERY` steps, if enough experiences are available, the agent samples a batch from the replay buffer and learns. It uses the Double DQN algorithm:  
+Every `UPDATE_EVERY` steps, if enough experiences are available, the agent samples a batch from the replay buffer and learns. It uses the Double DQN algorithm:
+
 - The local network selects the best next action.
 - The target network estimates the value of that action.
 - The agent updates the local network to minimize the difference between predicted and target Q-values.
 
-**Algorithm:**  
+**Algorithm:**
+
 - The agent interacts with the environment and collects experiences.
 - It periodically samples a batch of experiences to update the local network.
 - The target network is softly updated to slowly track the local network, providing stable learning targets.
 
 This approach helps the agent learn efficiently and stably in complex environments.
-
 
 ```python
 
@@ -276,11 +267,11 @@ class Agent():
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, seed)
         # Initialize time step (for updating every UPDATE_EVERY steps)
         self.t_step = 0
-        
+
     def step(self, state, action, reward, next_state, done):
         # Save experience in replay memory
         self.memory.add(state, action, reward, next_state, done)
-        
+
         # Learn every UPDATE_EVERY time steps.
         self.t_step = (self.t_step + 1) % UPDATE_EVERY
         if self.t_step == 0:
@@ -291,7 +282,7 @@ class Agent():
 
     def act(self, state, eps=0.):
         """Returns actions for given state as per current policy.
-        
+
         Params
         ======
             state (array_like): current state
@@ -314,7 +305,7 @@ class Agent():
 
         Params
         ======
-            experiences (Tuple[torch.Tensor]): tuple of (s, a, r, s', done) tuples 
+            experiences (Tuple[torch.Tensor]): tuple of (s, a, r, s', done) tuples
             gamma (float): discount factor
         """
         states, actions, rewards, next_states, dones = experiences
@@ -333,7 +324,7 @@ class Agent():
         self.optimizer.step()
 
         # ------------------- update target network ------------------- #
-        self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)                     
+        self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)
 
     def soft_update(self, local_model, target_model, tau):
         """Soft update model parameters.
@@ -343,12 +334,11 @@ class Agent():
         ======
             local_model (PyTorch model): weights will be copied from
             target_model (PyTorch model): weights will be copied to
-            tau (float): interpolation parameter 
+            tau (float): interpolation parameter
         """
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
             target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
 ```
-
 
 ```python
 from itertools import count
@@ -360,7 +350,7 @@ brain = env.brains[brain_name]
 
 def dqn(n_episodes=2000, max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
     """Deep Q-Learning.
-    
+
     Params
     ======
         n_episodes (int): maximum number of training episodes
@@ -416,20 +406,13 @@ plt.show()
     Episode 480	Average Score: 13.01
     Environment solved in 380 episodes!	Average Score: 13.01
 
-
-
-    
 ![png](Navigation_files/Navigation_17_1.png)
-    
-
-
 
 ```python
 
 ```
 
 When finished, you can close the environment.
-
 
 ```python
 env.close()
